@@ -9,7 +9,7 @@ class GetLocationInfoFromIP : command
 	{
 		std::map<std::string, std::string> map;
 		map["ticket"] = TICKET;
-		map["ipAddrStr"] = "193.80.244.107";
+		map["ipAddrStr"] = args[0];
 
 		return run("http://gta5-prod.ros.rockstargames.com/gta5/11/gameservices/GeoLocation.asmx/GetLocationInfoFromIP", 38, map);
 	}
