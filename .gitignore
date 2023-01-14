@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+/.vs/SCAPI
+*.pdb
+/SCAPI/x64/Debug
