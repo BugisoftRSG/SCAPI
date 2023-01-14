@@ -1,0 +1,21 @@
+#include "command.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include "ros_crypt.hpp"
+
+class Decrypt : command
+{
+	using command::command;
+
+	virtual std::string execute(const std::vector<std::string>& args)
+	{
+		std::ifstream infile(R"(C:\Users\Bugisoft\Downloads\GTA_Reverse\request_content.txt)", std::ios_base::binary);
+
+		std::vector<char> bytes((std::istreambuf_iterator<char>(infile)), (std::istreambuf_iterator<char>()));
+
+		return urlDecode(DecryptROSData(&bytes[0], bytes.size(), SESSION_KEY));
+	}
+};
+
+Decrypt g_decrypt("decrypt");

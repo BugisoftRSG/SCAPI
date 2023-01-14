@@ -45,6 +45,9 @@
     <ClCompile Include="Matchmaking.cpp">
       <Filter>Source Files\commands</Filter>
     </ClCompile>
+    <ClCompile Include="Decrypt.cpp">
+      <Filter>Source Files\commands</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HTTPRequest.hpp">

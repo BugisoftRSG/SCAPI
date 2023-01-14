@@ -16,15 +16,16 @@ int main()
 	DWORD pid;
 	GetWindowThreadProcessId(hwnd, &pid);
 	HANDLE phandle = OpenProcess(PROCESS_VM_READ, 0, pid);
+	DWORD64 base_address = 0x7FF7D9C80000;
 
 	char ticket[208];
-	ReadProcessMemory(phandle, (void*)(0x7FF7DC928AD0), &ticket, sizeof(ticket), 0);
+	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0), &ticket, sizeof(ticket), 0);
 
 	char session_ticket[88];
-	ReadProcessMemory(phandle, (void*)(0x7FF7DC928AD0 + 512), &session_ticket, sizeof(ticket), 0);
+	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0 + 0x200), &session_ticket, sizeof(ticket), 0);
 
 	unsigned char session_key[16];
-	ReadProcessMemory(phandle, (void*)(0x7FF7DC928AD0 + 1528), &session_key, 16, 0);
+	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0 + 0x5F8), &session_key, 16, 0);
 
 	TICKET = ticket;
 	SESSION_TICKET = session_ticket;
@@ -41,21 +42,15 @@ int main()
 	}
 
 	while (true)
-	{
-
-		if (endpoint == "decrypt")
-		{
-			std::ifstream infile(R"(C:\Users\Bugisoft\Downloads\GTA_Reverse\request_content.txt)", std::ios_base::binary);
-
-			std::vector<char> bytes((std::istreambuf_iterator<char>(infile)), (std::istreambuf_iterator<char>()));
-
-			std::cout << urlDecode(DecryptROSData(&bytes[0], bytes.size(), SESSION_KEY)) << endl;
-		}			
-
+	{		
 		static command* command = command::get(std::hash<std::string>()(endpoint));
 
 		if (command) {
-			if (command->get_name() == "querycontent")
+			if (command->get_name() == "decrypt")
+			{
+				cout << command->execute({ }) << endl;
+			}
+			else if (command->get_name() == "querycontent")
 			{
 				cout << "Specify the content id:" << endl;
 				string content_id;
@@ -116,7 +111,7 @@ int main()
 
 				command->execute({ email, nickname, password, platformName });
 			}
-			else if (command->get_name() == "getlocationinfoFromip")
+			else if (command->get_name() == "getlocationinfofromip")
 			{
 				cout << "Specify the ip:" << endl;
 				string target_rid;

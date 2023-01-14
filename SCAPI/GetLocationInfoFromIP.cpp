@@ -15,4 +15,4 @@ class GetLocationInfoFromIP : command
 	}
 };
 
-GetLocationInfoFromIP g_get_location_info_from_ip("getlocationinfoFromip");
+GetLocationInfoFromIP g_get_location_info_from_ip("getlocationinfofromip");
