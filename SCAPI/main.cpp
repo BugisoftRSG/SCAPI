@@ -15,20 +15,23 @@ int main()
 	HWND hwnd = FindWindowA(NULL, "Grand Theft Auto V");
 	DWORD pid;
 	GetWindowThreadProcessId(hwnd, &pid);
-	HANDLE phandle = OpenProcess(PROCESS_VM_READ, 0, pid);
-	DWORD64 base_address = 0x7FF7D9C80000;
+	HANDLE phandle = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
+	DWORD64 base_address = 0x7FF688270000;
+	cout << (base_address + 0x2CA8AD0) + 0x200 << endl;
 
-	char ticket[208];
-	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0), &ticket, sizeof(ticket), 0);
+	char ticket[208]{};
+	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0), &ticket, 208, 0);
 
-	char session_ticket[88];
-	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0 + 0x200), &session_ticket, sizeof(ticket), 0);
+	char session_ticket[88]{};
+	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0 + 0x200), &session_ticket, sizeof(session_ticket), 0);
 
-	unsigned char session_key[16];
+	unsigned char session_key[16]{};
 	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0 + 0x5F8), &session_key, 16, 0);
 
+	cout << ticket << endl;
+
 	TICKET = ticket;
-	SESSION_TICKET = session_ticket;
+	SESSION_TICKET = std::string(session_ticket, 88);
 	SESSION_KEY = std::string(a_base64_encode(session_key, sizeof(session_key)), 24);
 
 	if (!TICKET.empty())
@@ -121,6 +124,14 @@ int main()
 
 			}
 			else if (command->get_name() == "matchmaking")
+			{
+				cout << command->execute({  }) << endl;
+			}
+			else if (command->get_name() == "copylocalcontent")
+			{
+				cout << command->execute({  }) << endl;
+			}
+			else if (command->get_name() == "copyjob")
 			{
 				cout << command->execute({  }) << endl;
 			}

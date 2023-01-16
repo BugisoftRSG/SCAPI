@@ -112,7 +112,7 @@ inline unsigned char* a_base64_decode(const char* data, size_t input_length)
 	return decoded_data;
 }
 
-class ROSCryptoState
+inline class ROSCryptoState
 {
 private:
 	Botan::StreamCipher* m_rc4;
@@ -371,7 +371,7 @@ inline string url_encode(const string& value)
 	for (std::string::const_iterator i = value.begin(), n = value.end(); i != n; ++i)
 	{
 		std::string::value_type c = (*i);
-		if (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.' || c == '~') && c != '+')
+		if (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.' || c == '~') || c == '+')
 		{
 			escaped << c;
 		}
@@ -381,7 +381,7 @@ inline string url_encode(const string& value)
 		}
 		else
 		{
-			escaped << '%' << std::setw(2) << ((int)(uint8_t)c) << std::setw(0);
+			escaped << std::uppercase << '%' << std::setw(2) << ((int)(uint8_t)c) << std::setw(0);
 		}
 	}
 

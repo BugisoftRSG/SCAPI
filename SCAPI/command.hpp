@@ -3,15 +3,16 @@
 #include <unordered_map>
 #include <map>
 
-inline std::string TICKET = "";
-inline std::string SESSION_TICKET = "";
-inline std::string SESSION_KEY = "";
+inline std::string TICKET = "a";
+inline std::string SESSION_TICKET = "n";
+inline std::string SESSION_KEY = "v";
 
 class command
 {
 protected:
 	std::string m_name;
 	static std::string run(const std::string& url, int offset, std::map<std::string, std::string> map);
+	static std::string run(const std::string& url, int offset, std::string );
 	static std::string run_create_ticket(const std::string& url, int offset, std::map<std::string, std::string> map);
 public:
 	command(const std::string& name);

@@ -34,6 +34,27 @@ std::string command::run(const std::string& url, int offset, std::map<std::strin
 	return DecryptROSData(response.c_str(), response.size(), SESSION_KEY);
 }
 
+std::string command::run(const std::string& url, int offset, std::string params)
+{
+	std::string queryString = EncryptROSData(params, SESSION_KEY);
+
+	Botan::AutoSeeded_RNG rng;
+	auto challenge = rng.random_vec(8);
+
+	http::Request http{ url };
+	const auto request = http.send("POST", queryString, {
+		{"ros-SecurityFlags", "239"},
+		{"ros-SessionTicket", SESSION_TICKET},
+		{"ros-Challenge", Botan::base64_encode(challenge)},
+		{"ros-HeadersHmac", Botan::base64_encode(HeadersHmac(challenge, "POST", url.substr(offset), SESSION_KEY, SESSION_TICKET))},
+		{"Content-Type", "application/x-www-form-urlencoded; charset=utf-8"},
+		{"User-Agent", GetROSVersionString()}
+		});
+
+	std::string response = std::string{ request.body.begin(), request.body.end() };
+	return DecryptROSData(response.c_str(), response.size(), SESSION_KEY);
+}
+
 std::string command::run_create_ticket(const std::string& url, int offset, std::map<std::string, std::string> map)
 {
 	std::string queryString = EncryptROSData(BuildPostString(map));
