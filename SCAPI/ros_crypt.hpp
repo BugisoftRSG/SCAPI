@@ -1,14 +1,55 @@
 #pragma once
-#include <botan/botan.h>
-#include <botan/base64.h>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
-#pragma comment(lib, "ws2_32.lib")
-#include "HTTPRequest.hpp"
 #include <iostream>
 #include <format>
-#include <zlib.h>
+#include <cctype>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <functional>
+#include <map>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <system_error>
+#include <type_traits>
+#include <vector>
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  pragma push_macro("WIN32_LEAN_AND_MEAN")
+#  pragma push_macro("NOMINMAX")
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif // WIN32_LEAN_AND_MEAN
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif // NOMINMAX
+#  include <winsock2.h>
+#  if _WIN32_WINNT < _WIN32_WINNT_WINXP
+extern "C" char* _strdup(const char* strSource);
+#    define strdup _strdup
+#    include <wspiapi.h>
+#  endif // _WIN32_WINNT < _WIN32_WINNT_WINXP
+#  include <ws2tcpip.h>
+#  pragma pop_macro("WIN32_LEAN_AND_MEAN")
+#  pragma pop_macro("NOMINMAX")
+#else
+#  include <errno.h>
+#  include <fcntl.h>
+#  include <netinet/in.h>
+#  include <netdb.h>
+#  include <sys/select.h>
+#  include <sys/socket.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#endif // defined(_WIN32) || defined(__CYGWIN__)
+#include "botan/botan.h"
+#include "botan/base64.h"
 
 // C4pWJwWIKGUxcHd69eGl2AOwH2zrmzZAoQeHfQFcMelybd32QFw9s10px6k0o75XZeB5YsI9Q9TdeuRgdbvKsxc= PC
 // C6i91R73oCD3qt1kUh0UIkDTu3Su5Qa7/r74q5ohUj1UxX/yQz7qB8a4y2TXfCMxqJo31tOPuZJMwG3jupDl7rs= PS4
@@ -112,7 +153,7 @@ inline unsigned char* a_base64_decode(const char* data, size_t input_length)
 	return decoded_data;
 }
 
-inline class ROSCryptoState
+class ROSCryptoState
 {
 private:
 	Botan::StreamCipher* m_rc4;
@@ -363,6 +404,32 @@ inline std::string DecryptROSData(const char* data, size_t size, const std::stri
 #pragma optimize("", on)
 
 inline string url_encode(const string& value)
+{
+	std::ostringstream escaped;
+	escaped.fill('0');
+	escaped << std::hex;
+
+	for (std::string::const_iterator i = value.begin(), n = value.end(); i != n; ++i)
+	{
+		std::string::value_type c = (*i);
+		if (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.' || c == '~') && c != '+')
+		{
+			escaped << c;
+		}
+		else if (c == ' ')
+		{
+			escaped << '+';
+		}
+		else
+		{
+			escaped << '%' << std::setw(2) << ((int)(uint8_t)c) << std::setw(0);
+		}
+	}
+
+	return string(escaped.str().c_str());
+}
+
+inline string ex_url_encode(const string& value)
 {
 	std::ostringstream escaped;
 	escaped.fill('0');
