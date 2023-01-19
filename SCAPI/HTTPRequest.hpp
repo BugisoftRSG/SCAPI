@@ -32,7 +32,7 @@
 #  endif // NOMINMAX
 #  include <winsock2.h>
 #  if _WIN32_WINNT < _WIN32_WINNT_WINXP
-extern "C" char* _strdup(const char* strSource);
+extern "C" char *_strdup(const char *strSource);
 #    define strdup _strdup
 #    include <wspiapi.h>
 #  endif // _WIN32_WINNT < _WIN32_WINNT_WINXP
@@ -52,22 +52,22 @@ extern "C" char* _strdup(const char* strSource);
 
 namespace http
 {
-    class RequestError final : public std::logic_error
+    class RequestError final: public std::logic_error
     {
     public:
-        using std::logic_error::logic_error;
+        using logic_error::logic_error;
     };
 
-    class ResponseError final : public std::runtime_error
+    class ResponseError final: public std::runtime_error
     {
     public:
-        using std::runtime_error::runtime_error;
+        using runtime_error::runtime_error;
     };
 
-    enum class InternetProtocol : std::uint8_t
+    enum class InternetProtocol: std::uint8_t
     {
-        V4,
-        V6
+        v4,
+        v6
     };
 
     struct Uri final
@@ -91,7 +91,7 @@ namespace http
     struct Status final
     {
         // RFC 7231, 6. Response Status Codes
-        enum Code : std::uint16_t
+        enum Code: std::uint16_t
         {
             Continue = 100,
             SwitchingProtocol = 101,
@@ -186,12 +186,12 @@ namespace http
                 WSADATA wsaData;
                 const auto error = WSAStartup(MAKEWORD(2, 2), &wsaData);
                 if (error != 0)
-                    throw std::system_error{ error, std::system_category(), "WSAStartup failed" };
+                    throw std::system_error{error, std::system_category(), "WSAStartup failed"};
 
                 if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
                 {
                     WSACleanup();
-                    throw std::runtime_error{ "Invalid WinSock version" };
+                    throw std::runtime_error{"Invalid WinSock version"};
                 }
 
                 started = true;
@@ -202,8 +202,8 @@ namespace http
                 if (started) WSACleanup();
             }
 
-            WinSock(WinSock&& other) noexcept :
-                started{ other.started }
+            WinSock(WinSock&& other) noexcept:
+                started{other.started}
             {
                 other.started = false;
             }
@@ -233,9 +233,9 @@ namespace http
 
         constexpr int getAddressFamily(const InternetProtocol internetProtocol)
         {
-            return (internetProtocol == InternetProtocol::V4) ? AF_INET :
-                (internetProtocol == InternetProtocol::V6) ? AF_INET6 :
-                throw RequestError{ "Unsupported protocol" };
+            return (internetProtocol == InternetProtocol::v4) ? AF_INET :
+                (internetProtocol == InternetProtocol::v6) ? AF_INET6 :
+                throw RequestError{"Unsupported protocol"};
         }
 
         class Socket final
@@ -249,31 +249,31 @@ namespace http
             static constexpr Type invalid = -1;
 #endif // defined(_WIN32) || defined(__CYGWIN__)
 
-            explicit Socket(const InternetProtocol internetProtocol) :
-                endpoint{ socket(getAddressFamily(internetProtocol), SOCK_STREAM, IPPROTO_TCP) }
+            explicit Socket(const InternetProtocol internetProtocol):
+                endpoint{socket(getAddressFamily(internetProtocol), SOCK_STREAM, IPPROTO_TCP)}
             {
                 if (endpoint == invalid)
-                    throw std::system_error{ getLastError(), std::system_category(), "Failed to create socket" };
+                    throw std::system_error{getLastError(), std::system_category(), "Failed to create socket"};
 
 #if defined(_WIN32) || defined(__CYGWIN__)
                 ULONG mode = 1;
                 if (ioctlsocket(endpoint, FIONBIO, &mode) != 0)
                 {
                     close();
-                    throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to get socket flags" };
+                    throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to get socket flags"};
                 }
 #else
                 const auto flags = fcntl(endpoint, F_GETFL);
                 if (flags == -1)
                 {
                     close();
-                    throw std::system_error{ errno, std::system_category(), "Failed to get socket flags" };
+                    throw std::system_error{errno, std::system_category(), "Failed to get socket flags"};
                 }
 
                 if (fcntl(endpoint, F_SETFL, flags | O_NONBLOCK) == -1)
                 {
                     close();
-                    throw std::system_error{ errno, std::system_category(), "Failed to set socket flags" };
+                    throw std::system_error{errno, std::system_category(), "Failed to set socket flags"};
                 }
 #endif // defined(_WIN32) || defined(__CYGWIN__)
 
@@ -282,7 +282,7 @@ namespace http
                 if (setsockopt(endpoint, SOL_SOCKET, SO_NOSIGPIPE, &value, sizeof(value)) == -1)
                 {
                     close();
-                    throw std::system_error{ errno, std::system_category(), "Failed to set socket option" };
+                    throw std::system_error{errno, std::system_category(), "Failed to set socket option"};
                 }
 #endif // __APPLE__
             }
@@ -292,8 +292,8 @@ namespace http
                 if (endpoint != invalid) close();
             }
 
-            Socket(Socket&& other) noexcept :
-                endpoint{ other.endpoint }
+            Socket(Socket&& other) noexcept:
+                endpoint{other.endpoint}
             {
                 other.endpoint = invalid;
             }
@@ -323,16 +323,16 @@ namespace http
                         char socketErrorPointer[sizeof(int)];
                         socklen_t optionLength = sizeof(socketErrorPointer);
                         if (getsockopt(endpoint, SOL_SOCKET, SO_ERROR, socketErrorPointer, &optionLength) == -1)
-                            throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to get socket option" };
+                            throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to get socket option"};
 
                         int socketError;
                         std::memcpy(&socketError, socketErrorPointer, sizeof(socketErrorPointer));
 
                         if (socketError != 0)
-                            throw std::system_error{ socketError, std::system_category(), "Failed to connect" };
+                            throw std::system_error{socketError, std::system_category(), "Failed to connect"};
                     }
                     else
-                        throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to connect" };
+                        throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to connect"};
                 }
 #else
                 auto result = ::connect(endpoint, address, addressSize);
@@ -348,13 +348,13 @@ namespace http
                         int socketError;
                         socklen_t optionLength = sizeof(socketError);
                         if (getsockopt(endpoint, SOL_SOCKET, SO_ERROR, &socketError, &optionLength) == -1)
-                            throw std::system_error{ errno, std::system_category(), "Failed to get socket option" };
+                            throw std::system_error{errno, std::system_category(), "Failed to get socket option"};
 
                         if (socketError != 0)
-                            throw std::system_error{ socketError, std::system_category(), "Failed to connect" };
+                            throw std::system_error{socketError, std::system_category(), "Failed to connect"};
                     }
                     else
-                        throw std::system_error{ errno, std::system_category(), "Failed to connect" };
+                        throw std::system_error{errno, std::system_category(), "Failed to connect"};
                 }
 #endif // defined(_WIN32) || defined(__CYGWIN__)
             }
@@ -364,24 +364,24 @@ namespace http
                 select(SelectType::write, timeout);
 #if defined(_WIN32) || defined(__CYGWIN__)
                 auto result = ::send(endpoint, reinterpret_cast<const char*>(buffer),
-                    static_cast<int>(length), 0);
+                                     static_cast<int>(length), 0);
 
                 while (result == -1 && WSAGetLastError() == WSAEINTR)
                     result = ::send(endpoint, reinterpret_cast<const char*>(buffer),
-                        static_cast<int>(length), 0);
+                                    static_cast<int>(length), 0);
 
                 if (result == -1)
-                    throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to send data" };
+                    throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to send data"};
 #else
                 auto result = ::send(endpoint, reinterpret_cast<const char*>(buffer),
-                    length, noSignal);
+                                     length, noSignal);
 
                 while (result == -1 && errno == EINTR)
                     result = ::send(endpoint, reinterpret_cast<const char*>(buffer),
-                        length, noSignal);
+                                    length, noSignal);
 
                 if (result == -1)
-                    throw std::system_error{ errno, std::system_category(), "Failed to send data" };
+                    throw std::system_error{errno, std::system_category(), "Failed to send data"};
 #endif // defined(_WIN32) || defined(__CYGWIN__)
                 return static_cast<std::size_t>(result);
             }
@@ -391,24 +391,24 @@ namespace http
                 select(SelectType::read, timeout);
 #if defined(_WIN32) || defined(__CYGWIN__)
                 auto result = ::recv(endpoint, reinterpret_cast<char*>(buffer),
-                    static_cast<int>(length), 0);
+                                     static_cast<int>(length), 0);
 
                 while (result == -1 && WSAGetLastError() == WSAEINTR)
                     result = ::recv(endpoint, reinterpret_cast<char*>(buffer),
-                        static_cast<int>(length), 0);
+                                    static_cast<int>(length), 0);
 
                 if (result == -1)
-                    throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to read data" };
+                    throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to read data"};
 #else
                 auto result = ::recv(endpoint, reinterpret_cast<char*>(buffer),
-                    length, noSignal);
+                                     length, noSignal);
 
                 while (result == -1 && errno == EINTR)
                     result = ::recv(endpoint, reinterpret_cast<char*>(buffer),
-                        length, noSignal);
+                                    length, noSignal);
 
                 if (result == -1)
-                    throw std::system_error{ errno, std::system_category(), "Failed to read data" };
+                    throw std::system_error{errno, std::system_category(), "Failed to read data"};
 #endif // defined(_WIN32) || defined(__CYGWIN__)
                 return static_cast<std::size_t>(result);
             }
@@ -432,44 +432,44 @@ namespace http
                     static_cast<LONG>((timeout % 1000) * 1000)
                 };
                 auto count = ::select(0,
-                    (type == SelectType::read) ? &descriptorSet : nullptr,
-                    (type == SelectType::write) ? &descriptorSet : nullptr,
-                    nullptr,
-                    (timeout >= 0) ? &selectTimeout : nullptr);
+                                      (type == SelectType::read) ? &descriptorSet : nullptr,
+                                      (type == SelectType::write) ? &descriptorSet : nullptr,
+                                      nullptr,
+                                      (timeout >= 0) ? &selectTimeout : nullptr);
 
                 while (count == -1 && WSAGetLastError() == WSAEINTR)
                     count = ::select(0,
-                        (type == SelectType::read) ? &descriptorSet : nullptr,
-                        (type == SelectType::write) ? &descriptorSet : nullptr,
-                        nullptr,
-                        (timeout >= 0) ? &selectTimeout : nullptr);
+                                     (type == SelectType::read) ? &descriptorSet : nullptr,
+                                     (type == SelectType::write) ? &descriptorSet : nullptr,
+                                     nullptr,
+                                     (timeout >= 0) ? &selectTimeout : nullptr);
 
                 if (count == -1)
-                    throw std::system_error{ WSAGetLastError(), std::system_category(), "Failed to select socket" };
+                    throw std::system_error{WSAGetLastError(), std::system_category(), "Failed to select socket"};
                 else if (count == 0)
-                    throw ResponseError{ "Request timed out" };
+                    throw ResponseError{"Request timed out"};
 #else
                 timeval selectTimeout{
                     static_cast<time_t>(timeout / 1000),
                     static_cast<suseconds_t>((timeout % 1000) * 1000)
                 };
                 auto count = ::select(endpoint + 1,
-                    (type == SelectType::read) ? &descriptorSet : nullptr,
-                    (type == SelectType::write) ? &descriptorSet : nullptr,
-                    nullptr,
-                    (timeout >= 0) ? &selectTimeout : nullptr);
+                                      (type == SelectType::read) ? &descriptorSet : nullptr,
+                                      (type == SelectType::write) ? &descriptorSet : nullptr,
+                                      nullptr,
+                                      (timeout >= 0) ? &selectTimeout : nullptr);
 
                 while (count == -1 && errno == EINTR)
                     count = ::select(endpoint + 1,
-                        (type == SelectType::read) ? &descriptorSet : nullptr,
-                        (type == SelectType::write) ? &descriptorSet : nullptr,
-                        nullptr,
-                        (timeout >= 0) ? &selectTimeout : nullptr);
+                                     (type == SelectType::read) ? &descriptorSet : nullptr,
+                                     (type == SelectType::write) ? &descriptorSet : nullptr,
+                                     nullptr,
+                                     (timeout >= 0) ? &selectTimeout : nullptr);
 
                 if (count == -1)
-                    throw std::system_error{ errno, std::system_category(), "Failed to select socket" };
+                    throw std::system_error{errno, std::system_category(), "Failed to select socket"};
                 else if (count == 0)
-                    throw ResponseError{ "Request timed out" };
+                    throw ResponseError{"Request timed out"};
 #endif // defined(_WIN32) || defined(__CYGWIN__)
             }
 
@@ -569,7 +569,7 @@ namespace http
         {
             // DIGIT
             return (c >= 0x30 && c <= 0x39) ? static_cast<T>(c - 0x30) : // 0 - 9
-                throw ResponseError{ "Invalid digit" };
+                throw ResponseError{"Invalid digit"};
         }
 
         // RFC 5234, Appendix B.1. Core Rules
@@ -580,7 +580,7 @@ namespace http
             return (c >= 0x30 && c <= 0x39) ? static_cast<T>(c - 0x30) : // 0 - 9
                 (c >= 0x41 && c <= 0x46) ? static_cast<T>(c - 0x41) + T(10) : // A - Z
                 (c >= 0x61 && c <= 0x66) ? static_cast<T>(c - 0x61) + T(10) : // a - z, some services send lower-case hex digits
-                throw ResponseError{ "Invalid hex digit" };
+                throw ResponseError{"Invalid hex digit"};
         }
 
         // RFC 3986, 3. Syntax Components
@@ -592,7 +592,7 @@ namespace http
             // RFC 3986, 3.1. Scheme
             auto i = begin;
             if (i == end || !isAlphaChar(*begin))
-                throw RequestError{ "Invalid scheme" };
+                throw RequestError{"Invalid scheme"};
 
             result.scheme.push_back(*i++);
 
@@ -600,11 +600,11 @@ namespace http
                 result.scheme.push_back(*i);
 
             if (i == end || *i++ != ':')
-                throw RequestError{ "Invalid scheme" };
+                throw RequestError{"Invalid scheme"};
             if (i == end || *i++ != '/')
-                throw RequestError{ "Invalid scheme" };
+                throw RequestError{"Invalid scheme"};
             if (i == end || *i++ != '/')
-                throw RequestError{ "Invalid scheme" };
+                throw RequestError{"Invalid scheme"};
 
             // RFC 3986, 3.2. Authority
             std::string authority = std::string(i, end);
@@ -676,30 +676,30 @@ namespace http
             auto i = begin;
 
             if (i == end || *i++ != 'H')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
             if (i == end || *i++ != 'T')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
             if (i == end || *i++ != 'T')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
             if (i == end || *i++ != 'P')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
             if (i == end || *i++ != '/')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
 
             if (i == end)
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
 
             const auto majorVersion = digitToUint<std::uint16_t>(*i++);
 
             if (i == end || *i++ != '.')
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
 
             if (i == end)
-                throw ResponseError{ "Invalid HTTP version" };
+                throw ResponseError{"Invalid HTTP version"};
 
             const auto minorVersion = digitToUint<std::uint16_t>(*i++);
 
-            return { i, HttpVersion{majorVersion, minorVersion} };
+            return {i, HttpVersion{majorVersion, minorVersion}};
         }
 
         // RFC 7230, 3.1.2. Status Line
@@ -713,9 +713,9 @@ namespace http
                 result = static_cast<std::uint16_t>(result * 10U) + digitToUint<std::uint16_t>(*i++);
 
             if (std::distance(begin, i) != 3)
-                throw ResponseError{ "Invalid status code" };
+                throw ResponseError{"Invalid status code"};
 
-            return { i, result };
+            return {i, result};
         }
 
         // RFC 7230, 3.1.2. Status Line
@@ -728,7 +728,7 @@ namespace http
             for (; i != end && (isWhiteSpaceChar(*i) || isVisibleChar(*i) || isObsoleteTextChar(*i)); ++i)
                 result.push_back(static_cast<char>(*i));
 
-            return { i, std::move(result) };
+            return {i, std::move(result)};
         }
 
         // RFC 7230, 3.2.6. Field Value Components
@@ -742,9 +742,9 @@ namespace http
                 result.push_back(static_cast<char>(*i));
 
             if (result.empty())
-                throw ResponseError{ "Invalid token" };
+                throw ResponseError{"Invalid token"};
 
-            return { i, std::move(result) };
+            return {i, std::move(result)};
         }
 
         // RFC 7230, 3.2. Header Fields
@@ -760,9 +760,9 @@ namespace http
             // trim white spaces
             result.erase(std::find_if(result.rbegin(), result.rend(), [](const char c) noexcept {
                 return !isWhiteSpaceChar(c);
-                }).base(), result.end());
+            }).base(), result.end());
 
-            return { i, std::move(result) };
+            return {i, std::move(result)};
         }
 
         // RFC 7230, 3.2. Header Fields
@@ -795,7 +795,7 @@ namespace http
                 i = obsoleteFoldIterator;
             }
 
-            return { i, std::move(result) };
+            return {i, std::move(result)};
         }
 
         // RFC 7230, 3.2. Header Fields
@@ -807,7 +807,7 @@ namespace http
             auto fieldName = std::move(tokenResult.second);
 
             if (i == end || *i++ != ':')
-                throw ResponseError{ "Invalid header" };
+                throw ResponseError{"Invalid header"};
 
             i = skipWhiteSpaces(i, end);
 
@@ -816,12 +816,12 @@ namespace http
             auto fieldValue = std::move(valueResult.second);
 
             if (i == end || *i++ != '\r')
-                throw ResponseError{ "Invalid header" };
+                throw ResponseError{"Invalid header"};
 
             if (i == end || *i++ != '\n')
-                throw ResponseError{ "Invalid header" };
+                throw ResponseError{"Invalid header"};
 
-            return { i, {std::move(fieldName), std::move(fieldValue)} };
+            return {i, {std::move(fieldName), std::move(fieldValue)}};
         }
 
         // RFC 7230, 3.1.2. Status Line
@@ -832,28 +832,28 @@ namespace http
             auto i = httpVersionResult.first;
 
             if (i == end || *i++ != ' ')
-                throw ResponseError{ "Invalid status line" };
+                throw ResponseError{"Invalid status line"};
 
             const auto statusCodeResult = parseStatusCode(i, end);
             i = statusCodeResult.first;
 
             if (i == end || *i++ != ' ')
-                throw ResponseError{ "Invalid status line" };
+                throw ResponseError{"Invalid status line"};
 
             auto reasonPhraseResult = parseReasonPhrase(i, end);
             i = reasonPhraseResult.first;
 
             if (i == end || *i++ != '\r')
-                throw ResponseError{ "Invalid status line" };
+                throw ResponseError{"Invalid status line"};
 
             if (i == end || *i++ != '\n')
-                throw ResponseError{ "Invalid status line" };
+                throw ResponseError{"Invalid status line"};
 
-            return { i, Status{
+            return {i, Status{
                 httpVersionResult.second,
                 statusCodeResult.second,
                 std::move(reasonPhraseResult.second)
-            } };
+            }};
         }
 
         // RFC 7230, 4.1. Chunked Transfer Coding
@@ -890,15 +890,15 @@ namespace http
             for (const auto& headerField : headerFields)
             {
                 if (headerField.first.empty())
-                    throw RequestError{ "Invalid header field name" };
+                    throw RequestError{"Invalid header field name"};
 
                 for (const auto c : headerField.first)
                     if (!isTokenChar(c))
-                        throw RequestError{ "Invalid header field name" };
+                        throw RequestError{"Invalid header field name"};
 
                 for (const auto c : headerField.second)
                     if (!isWhiteSpaceChar(c) && !isVisibleChar(c) && !isObsoleteTextChar(c))
-                        throw RequestError{ "Invalid header field value" };
+                        throw RequestError{"Invalid header field value"};
 
                 result += headerField.first + ": " + headerField.second + "\r\n";
             }
@@ -954,27 +954,27 @@ namespace http
         }
 
         inline std::vector<std::uint8_t> encodeHtml(const Uri& uri,
-            const std::string& method,
-            const std::vector<uint8_t>& body,
-            HeaderFields headerFields)
+                                                    const std::string& method,
+                                                    const std::vector<uint8_t>& body,
+                                                    HeaderFields headerFields)
         {
             if (uri.scheme != "http")
-                throw RequestError{ "Only HTTP scheme is supported" };
+                throw RequestError{"Only HTTP scheme is supported"};
 
             // RFC 7230, 5.3. Request Target
-            const std::string requestTarget = uri.path + (uri.query.empty() ? "" : '?' + uri.query);
+            const std::string requestTarget = uri.path + (uri.query.empty() ? ""  : '?' + uri.query);
 
             // RFC 7230, 5.4. Host
-            headerFields.push_back({ "Host", uri.host });
+            headerFields.push_back({"Host", uri.host});
 
             // RFC 7230, 3.3.2. Content-Length
-            headerFields.push_back({ "Content-Length", std::to_string(body.size()) });
+            headerFields.push_back({"Content-Length", std::to_string(body.size())});
 
             // RFC 7617, 2. The 'Basic' Authentication Scheme
             if (!uri.user.empty() || !uri.password.empty())
             {
                 std::string userinfo = uri.user + ':' + uri.password;
-                headerFields.push_back({ "Authorization", "Basic " + encodeBase64(userinfo.begin(), userinfo.end()) });
+                headerFields.push_back({"Authorization", "Basic " + encodeBase64(userinfo.begin(), userinfo.end())});
             }
 
             const auto headerData = encodeRequestLine(method, requestTarget) +
@@ -992,32 +992,32 @@ namespace http
     {
     public:
         explicit Request(const std::string& uriString,
-            const InternetProtocol protocol = InternetProtocol::V4) :
-            internetProtocol{ protocol },
-            uri{ parseUri(uriString.begin(), uriString.end()) }
+                         const InternetProtocol protocol = InternetProtocol::v4):
+            internetProtocol{protocol},
+            uri{parseUri(uriString.begin(), uriString.end())}
         {
         }
 
         Response send(const std::string& method = "GET",
-            const std::string& body = "",
-            const HeaderFields& headerFields = {},
-            const std::chrono::milliseconds timeout = std::chrono::milliseconds{ -1 })
+                      const std::string& body = "",
+                      const HeaderFields& headerFields = {},
+                      const std::chrono::milliseconds timeout = std::chrono::milliseconds{-1})
         {
             return send(method,
-                std::vector<uint8_t>(body.begin(), body.end()),
-                headerFields,
-                timeout);
+                        std::vector<uint8_t>(body.begin(), body.end()),
+                        headerFields,
+                        timeout);
         }
 
         Response send(const std::string& method,
-            const std::vector<uint8_t>& body,
-            const HeaderFields& headerFields = {},
-            const std::chrono::milliseconds timeout = std::chrono::milliseconds{ -1 })
+                      const std::vector<uint8_t>& body,
+                      const HeaderFields& headerFields = {},
+                      const std::chrono::milliseconds timeout = std::chrono::milliseconds{-1})
         {
             const auto stopTime = std::chrono::steady_clock::now() + timeout;
 
             if (uri.scheme != "http")
-                throw RequestError{ "Only HTTP scheme is supported" };
+                throw RequestError{"Only HTTP scheme is supported"};
 
             addrinfo hints = {};
             hints.ai_family = getAddressFamily(internetProtocol);
@@ -1027,13 +1027,13 @@ namespace http
 
             addrinfo* info;
             if (getaddrinfo(uri.host.c_str(), port, &hints, &info) != 0)
-                throw std::system_error{ getLastError(), std::system_category(), "Failed to get address info of " + uri.host };
+                throw std::system_error{getLastError(), std::system_category(), "Failed to get address info of " + uri.host};
 
-            const std::unique_ptr<addrinfo, decltype(&freeaddrinfo)> addressInfo{ info, freeaddrinfo };
+            const std::unique_ptr<addrinfo, decltype(&freeaddrinfo)> addressInfo{info, freeaddrinfo};
 
             const auto requestData = encodeHtml(uri, method, body, headerFields);
 
-            Socket socket{ internetProtocol };
+            Socket socket{internetProtocol};
 
             const auto getRemainingMilliseconds = [](const std::chrono::steady_clock::time_point time) noexcept -> std::int64_t {
                 const auto now = std::chrono::steady_clock::now();
@@ -1043,7 +1043,7 @@ namespace http
 
             // take the first address from the list
             socket.connect(addressInfo->ai_addr, static_cast<socklen_t>(addressInfo->ai_addrlen),
-                (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
+                           (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
 
             auto remaining = requestData.size();
             auto sendData = requestData.data();
@@ -1052,14 +1052,14 @@ namespace http
             while (remaining > 0)
             {
                 const auto size = socket.send(sendData, remaining,
-                    (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
+                                              (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
                 remaining -= size;
                 sendData += size;
             }
 
             std::array<std::uint8_t, 4096> tempBuffer;
-            constexpr std::array<std::uint8_t, 2> crlf = { '\r', '\n' };
-            constexpr std::array<std::uint8_t, 4> headerEnd = { '\r', '\n', '\r', '\n' };
+            constexpr std::array<std::uint8_t, 2> crlf = {'\r', '\n'};
+            constexpr std::array<std::uint8_t, 4> headerEnd = {'\r', '\n', '\r', '\n'};
             Response response;
             std::vector<std::uint8_t> responseData;
             bool parsingBody = false;
@@ -1073,7 +1073,7 @@ namespace http
             for (;;)
             {
                 const auto size = socket.recv(tempBuffer.data(), tempBuffer.size(),
-                    (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
+                                              (timeout.count() >= 0) ? getRemainingMilliseconds(stopTime) : -1);
                 if (size == 0) // disconnected
                     return response;
 
@@ -1084,7 +1084,7 @@ namespace http
                     // RFC 7230, 3. Message Format
                     // Empty line indicates the end of the header section (RFC 7230, 2.1. Client/Server Messaging)
                     const auto endIterator = std::search(responseData.cbegin(), responseData.cend(),
-                        headerEnd.cbegin(), headerEnd.cend());
+                                                         headerEnd.cbegin(), headerEnd.cend());
                     if (endIterator == responseData.cend()) break; // two consecutive CRLFs not found
 
                     const auto headerBeginIterator = responseData.cbegin();
@@ -1114,7 +1114,7 @@ namespace http
                             if (fieldValue == "chunked")
                                 chunkedResponse = true;
                             else
-                                throw ResponseError{ "Unsupported transfer encoding: " + fieldValue };
+                                throw ResponseError{"Unsupported transfer encoding: " + fieldValue};
                         }
                         else if (fieldName == "content-length")
                         {
@@ -1124,7 +1124,7 @@ namespace http
                             response.body.reserve(contentLength);
                         }
 
-                        response.headerFields.push_back({ std::move(fieldName), std::move(fieldValue) });
+                        response.headerFields.push_back({std::move(fieldName), std::move(fieldValue)});
 
                         if (i == headerEndIterator)
                             break;
@@ -1146,9 +1146,9 @@ namespace http
                             {
                                 const auto toWrite = (std::min)(expectedChunkSize, responseData.size());
                                 response.body.insert(response.body.end(), responseData.begin(),
-                                    responseData.begin() + static_cast<std::ptrdiff_t>(toWrite));
+                                                     responseData.begin() + static_cast<std::ptrdiff_t>(toWrite));
                                 responseData.erase(responseData.begin(),
-                                    responseData.begin() + static_cast<std::ptrdiff_t>(toWrite));
+                                                   responseData.begin() + static_cast<std::ptrdiff_t>(toWrite));
                                 expectedChunkSize -= toWrite;
 
                                 if (expectedChunkSize == 0) removeCrlfAfterChunk = true;
@@ -1159,16 +1159,16 @@ namespace http
                                 if (removeCrlfAfterChunk)
                                 {
                                     if (responseData.size() < 2) break;
-
+                                    
                                     if (!std::equal(crlf.begin(), crlf.end(), responseData.begin()))
-                                        throw ResponseError{ "Invalid chunk" };
+                                        throw ResponseError{"Invalid chunk"};
 
                                     removeCrlfAfterChunk = false;
                                     responseData.erase(responseData.begin(), responseData.begin() + 2);
                                 }
 
                                 const auto i = std::search(responseData.begin(), responseData.end(),
-                                    crlf.begin(), crlf.end());
+                                                           crlf.begin(), crlf.end());
 
                                 if (i == responseData.end()) break;
 

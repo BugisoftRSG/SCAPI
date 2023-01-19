@@ -129,8 +129,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="command.cpp" />
+    <ClCompile Include="CopyJob.cpp" />
+    <ClCompile Include="CopyLocalContent.cpp" />
     <ClCompile Include="CreateTicket.cpp" />
     <ClCompile Include="Decrypt.cpp" />
+    <ClCompile Include="DeleteContent.cpp" />
     <ClCompile Include="GetLocationInfoFromIP.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matchmaking.cpp" />

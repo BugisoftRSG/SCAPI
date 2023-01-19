@@ -8,7 +8,6 @@ class QueryContent : command
 	virtual std::string execute(const std::vector<std::string>& args)
 	{
 		std::map<std::string, std::string> map;
-		std::cout << TICKET << std::endl;
 		map["ticket"] = TICKET;
 		map["contentType"] = "gta5mission";
 		map["queryName"] = "GetLatestVersionByContentId";
