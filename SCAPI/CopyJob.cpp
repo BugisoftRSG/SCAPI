@@ -29,13 +29,20 @@ class CopyJob : command
 		ss << std::hex << data_len;
 		std::string data_len_hex = ss.str();
 
+
 		if (data_len_hex.length() % 2 != 0) {
 			data_len_hex = "0" + data_len_hex;
 		}
 
-		//data_len_hex = "01a4a4"; // WRONG FIX THIS
+		//if (!image)
+		//	data_len_hex = "01a4a4"; // WRONG FIX THIS
 
 		std::vector<unsigned char> data_len_bytes = HexToBytes(data_len_hex); // should be \x01\xa4\xa4
+
+		//if (!image)
+		//{
+		//	data_len_bytes = { 0x01, 0xa4, 0xa4 };
+		//}
 
 		switch (data_len_bytes.size()) {
 		case 1:
@@ -53,9 +60,9 @@ class CopyJob : command
 
 		data_len_bytes.insert(data_len_bytes.end(), 3, 0);
 		if (image) 
-			data_len_bytes.push_back(0);
-		else 
 			data_len_bytes.push_back(2);
+		else 
+			data_len_bytes.push_back(0);
 
 		return data_len_bytes;
 	}
@@ -81,16 +88,14 @@ class CopyJob : command
 	{
 		std::map<std::string, std::string> map;
 
-		//std::ofstream of("2_0.jpg", std::ios::binary);
-		//cpr::Response r = cpr::Download(of, cpr::Url{ args[1] });
-
-		std::ifstream input(R"(C:\Users\Bugisoft\Downloads\2_0.jpg)");
+		std::ofstream of("2_0.jpg", std::ios::binary);
+		cpr::Response r = cpr::Download(of, cpr::Url{ args[1] });
+		std::ifstream input("2_0.jpg", std::ios_base::binary);
 		std::vector<unsigned char> image_bytes((std::istreambuf_iterator<char>(input)), (std::istreambuf_iterator<char>()));
 
-		std::string data = args[0];
-		nlohmann::json meta_json = nlohmann::json::parse(data);
+		nlohmann::json meta_json = nlohmann::json::parse(args[0]);
 
-		std::vector<unsigned char> data_len = get_data_len(meta_json.dump().length(), false);
+		std::vector<unsigned char> data_len = get_data_len(meta_json.dump().size(), false);
 		std::vector<unsigned char> image_data_len = get_data_len(image_bytes.size(), true);
 
 		nlohmann::json datajson;
@@ -100,7 +105,7 @@ class CopyJob : command
 
 		std::string temp = std::format("ticket={}&contentType=gta5mission&paramsJson=", url_encode(TICKET));
 
-		temp += ex_url_encode(std::format(R"({{"ContentName":"{}","DataJson":"{}","Description":"{}","Publish":true,"Language":"{}","TagCsv":"{}"}})", args[2], replaceAll(replaceAll(replaceAll(datajson.dump(), ",", ",+"), "\"", "\\\""), ":", ":+"), args[3], "de", ""));
+		temp += ex_url_encode(std::format(R"({{"ContentName":"{}","DataJson":"{}","Description":"{}","Publish":true,"Language":"{}","TagCsv":"{}"}})", args[2], replaceAll(datajson.dump(), "\"", "\\\""), args[3], "en", ""));
 		temp += "&data=";
 		
 		for (auto& i : data_len) 
