@@ -154,7 +154,6 @@ int main()
 	GetWindowThreadProcessId(hwnd, &pid);
 	HANDLE phandle = OpenProcess(PROCESS_ALL_ACCESS, 0, pid);
 	DWORD64 base_address = GetModuleBaseAddress(pid, L"GTA5.exe");
-	cout << (base_address + 0x2CA8AD0) + 0x200 << endl;
 
 	char ticket[208]{};
 	ReadProcessMemory(phandle, (void*)(base_address + 0x2CA8AD0), &ticket, 208, 0);
