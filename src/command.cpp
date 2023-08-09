@@ -80,8 +80,6 @@ string command::run(const string url, map<string, string> map)
 		},
 		cpr::Parameters{ params });
 
-		cout << response.status_code << endl;
-
 		return response.text;
 	}
 

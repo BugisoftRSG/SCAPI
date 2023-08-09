@@ -38,6 +38,28 @@ public:
 	virtual string execute(const vector<string>& args) = 0;
 	virtual SERVICE_TYPE get_service_type() = 0;
 
+	inline string get_category()
+	{
+		switch (get_service_type())
+		{
+		case PROD_ROS:
+			return "prod.ros";
+			break;
+		case PROD_ROS_LAUNCHER:
+			return "prod.ros (launcher)";
+			break;
+		case PROD_SCAPI_AMC:
+			return "SCAPI";
+			break;
+		case PROD_CLOUD:
+			return "cloud";
+			break;
+		default:
+			return "unknown";
+			break;
+		}
+	}
+
 	static ROSCrypt* m_launcher_ros;
 	static ROSCrypt* m_ros;
 };

@@ -110,7 +110,10 @@ class CreateTicket : command
 				}
 			}
 
-			string data = command::get(hash<string>()("getaccountinfo"))->execute({});
+			string data = "";
+			if (!TICKET.empty())
+				data = command::get(hash<string>()("getaccountinfo"))->execute({});
+
 			if (data.empty() || data.contains("Internal Server Error") || data.contains("AuthenticationFailed"))
 			{
 				cout << "Auth -> Cached session is no longer valid... recreating now." << endl;

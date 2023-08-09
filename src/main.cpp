@@ -114,11 +114,15 @@ int main()
 		SESSION_TICKET = string(session_ticket, 88);
 		SESSION_KEY = Botan::base64_encode(reinterpret_cast<const Botan::byte*>(session_key), sizeof(session_key));
 	}
+	else
+	{
+		cout << "GTA5.exe was not found... trying to use cached session.";
+	}
 #endif
 
 	cout << "Help:" << endl;
 	for (auto& it : g_commands) {
-		cout << it.second->get_name() << endl;
+		cout << it.second->get_category() << " - " << it.second->get_name() << endl;
 	}
 
 	if (!TICKET.empty())
@@ -126,21 +130,29 @@ int main()
 		cout << "Ticket " << TICKET << endl;
 		cout << "Session Ticket " << SESSION_TICKET << endl;
 		cout << "Session Key " << SESSION_KEY << endl;
-
-		cout << "Enter the endpoint:" << endl;
-		cin >> ws >> endpoint;
 	}
-	else
-	{
-		string response = command::get(hash<string>()("createticket"))->execute({});
+	else {
+		cout << "Do you want to proceed without session credentials? (y/n)" << endl;
+		cout << "If so you are not able to use most of the prod.ros endpoints" << endl;
 
-		if (TICKET.length() > 20)
+		string skipSessionCredentials;
+		cin >> skipSessionCredentials;
+
+		if (skipSessionCredentials != "y")
 		{
-			cout << "Ticket " << TICKET << endl;
-			cout << "Session Ticket " << SESSION_TICKET << endl;
-			cout << "Session Key " << SESSION_KEY << endl;
+			string _temp = command::get(hash<string>()("createticket"))->execute({});
+
+			if (TICKET.length() > 20)
+			{
+				cout << "Ticket " << TICKET << endl;
+				cout << "Session Ticket " << SESSION_TICKET << endl;
+				cout << "Session Key " << SESSION_KEY << endl;
+			}
 		}
 	}
+
+	cout << "Enter the endpoint:" << endl;
+	cin >> ws >> endpoint;
 
 	while (true)
 	{
@@ -148,7 +160,13 @@ int main()
 		static command* command = command::get(hash<string>()(endpoint));
 
 		if (command) {
-			cout << command->execute({ }) << endl;
+			string response = command->execute({ });
+			if (command->get_service_type() == SERVICE_TYPE::PROD_SCAPI_AMC && response.starts_with("{") && response.ends_with("}"))
+			{
+				response = nlohmann::json::parse(response).dump(4);
+			}
+
+			cout << response << endl;
 		}
 		cout << "Enter the endpoint:" << endl;
 		cin >> ws >> endpoint;

@@ -1,7 +1,7 @@
 #include "../../../command.hpp"
 #include <iostream>
 
-class SearchMission : command
+class SearchPhoto : command
 {
 	using command::command;
 
@@ -13,15 +13,18 @@ class SearchMission : command
 		map["title"] = "gtav";
 		map["platform"] = "pc";
 		map["includeCommentCount"] = "false";
-		map["searchTerm"] = "looping";
+		//map["searchTerm"] = "looping";
 		//map["sort"] = "date";
 		//map["dateRange"] = "any";
 		//map["creatorRockstarId"] = "12345678";
-		map["pageSize"] = "1";
+		//map["pageSize"] = "1";
 		//map["filter"] = "friends";
+		//map["regularPhoto"] = "true";
+		//map["selfie"] = "true";
+		//map["mugshot"] = "true";
 
-		return run("https://scapi.rockstargames.com/search/mission", map);
+		return run("https://scapi.rockstargames.com/search/photo", map);
 	}
 };
 
-SearchMission g_search_mission("searchmission");
+SearchPhoto g_search_photo("searchphoto");
