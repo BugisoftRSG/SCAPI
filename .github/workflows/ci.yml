@@ -1,0 +1,26 @@
+name: Build Test
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build on Windows and Linux
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure and Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .

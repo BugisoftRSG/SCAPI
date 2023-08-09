@@ -1,0 +1,15 @@
+# IDE
+.vs/
+.vscode/*
+!.vscode/launch.json
+.cache/
+
+# output directory
+build/
+out/
+__pycache__/
+
+# precompiled headers
+*.ipch
+*.gch
+*.pch
