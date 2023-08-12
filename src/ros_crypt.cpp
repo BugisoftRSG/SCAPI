@@ -205,28 +205,31 @@ string ROSCrypt::url_encode(const string& value)
 
 string ROSCrypt::ex_url_encode(const string& value)
 {
-	ostringstream escaped;
+	std::ostringstream escaped;
 	escaped.fill('0');
-	escaped << hex;
+	escaped << std::hex;
 
-	for (string::const_iterator i = value.begin(), n = value.end(); i != n; ++i)
-	{
-		string::value_type c = (*i);
-		if (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.' || c == '~') || c == '+')
-		{
-			escaped << c;
+	for (char c : value) {
+		if (static_cast<unsigned char>(c) <= 127) {
+			// Encode non-alphanumeric characters except '-' and '_'
+			if (std::isalnum(c) || c == '-' || c == '_') {
+				escaped << c;
+			}
+			else {
+				escaped << '%' << std::setw(2) << int(static_cast<unsigned char>(c));
+			}
 		}
-		else if (c == ' ')
-		{
-			escaped << '+';
-		}
-		else
-		{
-			escaped << uppercase << '%' << setw(2) << ((int)(uint8_t)c) << setw(0);
+		else {
+			// Handle non-ASCII characters properly by encoding as UTF-8
+			std::stringstream utf8Encoded;
+			utf8Encoded << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(static_cast<unsigned char>(c));
+			for (size_t i = 0; i < utf8Encoded.str().size(); ++i) {
+				escaped << '%' << utf8Encoded.str()[i];
+			}
 		}
 	}
 
-	return string(escaped.str().c_str());
+	return escaped.str();
 }
 
 string ROSCrypt::BuildPostString(const map<string, string>& fields)

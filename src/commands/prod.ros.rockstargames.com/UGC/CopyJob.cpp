@@ -36,12 +36,11 @@ class CopyJob : command
 		return false;
 	}
 
-	inline bool GetJobMetaData(string_view content_id, string& result)
+	inline bool GetJobMetaData(string_view content_id, string& result, string& lang)
 	{
-		string data = command::get(hash<string>()("querycontent"))->execute({ "GetLatestVersionByContentId", content_id.data() });
+		string data = command::get(hash<string>()("querycontent"))->execute({ "1", content_id.data()});
 		pugi::xml_document doc;
 		int f0 = 0, f1 = 0;
-		string lang;
 
 		if (doc.load_string(data.c_str()))
 		{
@@ -134,11 +133,11 @@ class CopyJob : command
 
 		string title, description, type, image;
 		vector<string> tags;
-		string metadata;
+		string metadata, lang;
 
 		if (GetJobDetails(content_id, title, description, type, tags, image))
 		{
-			if (!GetJobMetaData(content_id, metadata))
+			if (!GetJobMetaData(content_id, metadata, lang))
 			{
 				return "Couldn't download job metadata";
 			}
@@ -161,9 +160,28 @@ class CopyJob : command
 		datajson["mission"] = meta_json["mission"];
 		datajson["version"] = 2;
 
+		auto dataJsonDump = datajson.dump();
+
 		string temp = format("ticket={}&contentType=gta5mission&paramsJson=", m_ros->url_encode(TICKET));
 
-		temp += m_ros->ex_url_encode(format(R"({{"ContentName":"{}","DataJson":"{}","Description":"{}","Publish":true,"Language":"{}","TagCsv":"{}"}})", title, replaceAll(datajson.dump(), "\"", "\\\""), description, "en", ""));
+		std::string tagsSep = std::accumulate(
+			std::begin(tags),
+			std::end(tags),
+			std::string(),
+			[](const std::string& accumulator, const std::string& element) {
+				return accumulator.empty() ? element : accumulator + "," + element;
+			}
+		);
+
+		nlohmann::json obj;
+		obj["ContentName"] = title;
+		obj["DataJson"] = m_ros->ex_url_encode(replaceAll(datajson.dump(), "\"", "\\\""));
+		obj["Description"] = description;
+		obj["Publish"] = "true";
+		obj["Language"] = lang.empty() ? "en" : lang;
+		obj["TagCsv"] = tagsSep;
+
+		temp += obj.dump();
 		temp += "&data=";
 		
 		for (auto& i : data_len) 
