@@ -71,7 +71,7 @@ class CopyJob : command
 		return bytes;
 	}
 
-	vector<unsigned char> get_data_len(size_t data_len, bool image) // should be 107684
+	vector<unsigned char> get_data_len(size_t data_len, bool image)
 	{
 		stringstream ss;
 		ss << hex << data_len;
@@ -82,7 +82,7 @@ class CopyJob : command
 			data_len_hex = "0" + data_len_hex;
 		}
 
-		vector<unsigned char> data_len_bytes = HexToBytes(data_len_hex); // should be \x01\xa4\xa4
+		vector<unsigned char> data_len_bytes = HexToBytes(data_len_hex);
 
 		switch (data_len_bytes.size()) {
 		case 1:

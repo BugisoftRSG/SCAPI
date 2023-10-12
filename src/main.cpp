@@ -11,36 +11,36 @@
 #include <botan_all.h>
 
 #ifdef _WIN32
-	#include <Windows.h>
-	#include <tlhelp32.h>
+#include <Windows.h>
+#include <tlhelp32.h>
 #endif
 
 using namespace std;
 
 #ifdef _WIN32
-	uintptr_t GetModuleBaseAddress(DWORD procId, const char* modName)
+uintptr_t GetModuleBaseAddress(DWORD procId, const char* modName)
+{
+	uintptr_t modBaseAddr = 0;
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, procId);
+	if (hSnap != INVALID_HANDLE_VALUE)
 	{
-		uintptr_t modBaseAddr = 0;
-		HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, procId);
-		if (hSnap != INVALID_HANDLE_VALUE)
+		MODULEENTRY32 modEntry;
+		modEntry.dwSize = sizeof(modEntry);
+		if (Module32First(hSnap, &modEntry))
 		{
-			MODULEENTRY32 modEntry;
-			modEntry.dwSize = sizeof(modEntry);
-			if (Module32First(hSnap, &modEntry))
+			do
 			{
-				do
+				if (!strcmp(modEntry.szModule, modName))
 				{
-					if (!strcmp(modEntry.szModule, modName))
-					{
-						modBaseAddr = (uintptr_t)modEntry.modBaseAddr;
-						break;
-					}
-				} while (Module32Next(hSnap, &modEntry));
-			}
+					modBaseAddr = (uintptr_t)modEntry.modBaseAddr;
+					break;
+				}
+			} while (Module32Next(hSnap, &modEntry));
 		}
-		CloseHandle(hSnap);
-		return modBaseAddr;
 	}
+	CloseHandle(hSnap);
+	return modBaseAddr;
+}
 #endif
 
 AccountInfo GetAccountInfo()
@@ -71,18 +71,18 @@ AccountInfo GetAccountInfo()
 
 /*
 *  <Services Count="12">
-    <S ep="/Accounts.svc/" h="accounts-prod.ros.rockstargames.com" />
-    <S ep="/Feed.asmx/" h="feed-gta5-prod.ros.rockstargames.com" />
-    <S ep="/Telemetry.asmx/SubmitCompressed" h="prod.telemetry.ros.rockstargames.com" />
-    <S ep="/Telemetry.asmx/SubmitRealTime" h="prod.telemetry.ros.rockstargames.com" />
-    <S ep="conductor" h="conductor-prod.ros.rockstargames.com" />
-    <S ep="/ProfileStats.asmx/" h="ps-gta5-prod.ros.rockstargames.com" />
-    <S ep="/matchmaking.asmx/" h="mm-gta5-prod.ros.rockstargames.com" />
-    <S ep="/ugc.asmx/" h="ugc-gta5-prod.ros.rockstargames.com" />
-    <S ep="/Presence.asmx/" h="prs-gta5-prod.ros.rockstargames.com" />
-    <S ep="/Inbox.asmx/" h="inbox-gta5-prod.ros.rockstargames.com" />
-    <S ep="/Clans.asmx/" h="crews-gta5-prod.ros.rockstargames.com" />
-    <S ep="/cloudservices/members//GTA5/saves/mpstats" h="cs-gta5-prod.ros.rockstargames.com" />
+	<S ep="/Accounts.svc/" h="accounts-prod.ros.rockstargames.com" />
+	<S ep="/Feed.asmx/" h="feed-gta5-prod.ros.rockstargames.com" />
+	<S ep="/Telemetry.asmx/SubmitCompressed" h="prod.telemetry.ros.rockstargames.com" />
+	<S ep="/Telemetry.asmx/SubmitRealTime" h="prod.telemetry.ros.rockstargames.com" />
+	<S ep="conductor" h="conductor-prod.ros.rockstargames.com" />
+	<S ep="/ProfileStats.asmx/" h="ps-gta5-prod.ros.rockstargames.com" />
+	<S ep="/matchmaking.asmx/" h="mm-gta5-prod.ros.rockstargames.com" />
+	<S ep="/ugc.asmx/" h="ugc-gta5-prod.ros.rockstargames.com" />
+	<S ep="/Presence.asmx/" h="prs-gta5-prod.ros.rockstargames.com" />
+	<S ep="/Inbox.asmx/" h="inbox-gta5-prod.ros.rockstargames.com" />
+	<S ep="/Clans.asmx/" h="crews-gta5-prod.ros.rockstargames.com" />
+	<S ep="/cloudservices/members//GTA5/saves/mpstats" h="cs-gta5-prod.ros.rockstargames.com" />
   </Services>
 */
 
@@ -102,13 +102,13 @@ int main()
 		uintptr_t base_address = GetModuleBaseAddress(pid, "GTA5.exe");
 
 		char ticket[208]{};
-		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7B300), &ticket, 208, 0);
+		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7E380), &ticket, 208, 0);
 
 		char session_ticket[88]{};
-		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7B300 + 0x200), &session_ticket, 88, 0);
+		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7E380 + 0x200), &session_ticket, 88, 0);
 
 		unsigned char session_key[16]{};
-		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7B300 + 0x608), &session_key, 16, 0);
+		ReadProcessMemory(phandle, (void*)(base_address + 0x2E7E380 + 0x608), &session_key, 16, 0);
 
 		TICKET = ticket;
 		SESSION_TICKET = string(session_ticket, 88);
